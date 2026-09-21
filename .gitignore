@@ -1,0 +1,12 @@
+/node_modules/
+/.next/
+/.next-*/
+/.local/
+/artifacts/
+/out/
+/.env*
+!/.env.example
+/LOCAL-TEST-ACCOUNTS.md
+*.tsbuildinfo
+next-env.d.ts
+*.log
