@@ -1,0 +1,197 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { type MouseEvent, useEffect, useRef, useState } from "react";
+
+import styles from "./authenticated-navigation.module.css";
+
+import { authClient } from "@/lib/auth-client";
+import {
+  getAlternateRoleDestinations,
+  getContextHomeHref,
+  getContextNavigationItems,
+  getNavigationBreadcrumbs,
+  isNavigationItemActive,
+  type AuthenticatedContext,
+  type SerrianAppRole,
+} from "@/features/navigation/authenticated-navigation";
+
+const contextNames: Record<AuthenticatedContext, string> = {
+  admin: "Administration",
+  heavens: "The Heavens",
+  realms: "The Realms",
+};
+
+export function AuthenticatedNavigation({
+  context,
+  roles,
+  username,
+}: {
+  context: AuthenticatedContext;
+  roles: SerrianAppRole[];
+  username: string;
+}) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const [signOutError, setSignOutError] = useState("");
+  const [signingOut, setSigningOut] = useState(false);
+  const navigationRef = useRef<HTMLDivElement>(null);
+  const mobileMenuRef = useRef<HTMLDetailsElement>(null);
+  const navigationItems = getContextNavigationItems(context);
+  const contextHomeHref = getContextHomeHref(context);
+  const alternateRoleDestinations = getAlternateRoleDestinations(roles, context);
+  const breadcrumbs = getNavigationBreadcrumbs(pathname, context);
+
+  useEffect(() => {
+    const navigation = navigationRef.current;
+    if (!navigation) return;
+    const updateHeight = () => document.documentElement.style.setProperty(
+      "--st-navigation-height", `${navigation.getBoundingClientRect().height}px`,
+    );
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(navigation);
+    const closeOnOutsidePress = (event: PointerEvent) => {
+      const menu = mobileMenuRef.current;
+      if (menu?.open && event.target instanceof Node && !menu.contains(event.target)) menu.open = false;
+    };
+    document.addEventListener("pointerdown", closeOnOutsidePress);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("pointerdown", closeOnOutsidePress);
+      document.documentElement.style.removeProperty("--st-navigation-height");
+    };
+  }, []);
+
+  async function signOut() {
+    setSigningOut(true);
+    setSignOutError("");
+    try {
+      const result = await authClient.signOut();
+      if (result.error) throw new Error(result.error.message);
+      router.replace("/login"); router.refresh();
+    } catch { setSignOutError("Unable to sign out. Please try again."); setSigningOut(false); }
+  }
+
+  function closeDisclosure(event: MouseEvent<HTMLAnchorElement>) {
+    event.currentTarget.closest("details")?.removeAttribute("open");
+  }
+
+  const links = (
+    <>
+      {navigationItems.map((item) => {
+        const active = isNavigationItemActive(pathname, item);
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={closeDisclosure}
+            aria-current={active ? "page" : undefined}
+            className={`rounded-full border px-3 py-2 text-xs transition ${
+              active
+                ? "border-amber-300/45 bg-amber-300/15 text-amber-100"
+                : "border-transparent text-slate-400 hover:border-white/15 hover:bg-white/5 hover:text-slate-100"
+            }`}
+          >
+            {item.label}
+          </Link>
+        );
+      })}
+    </>
+  );
+
+  return (
+    <div ref={navigationRef} className={`authenticated-navigation ${styles.navigation} st-surface-soft-bg sticky top-0 z-50 border-b border-white/10 shadow-2xl backdrop-blur-xl`}>
+      <div className={`${styles.toolbar} mx-auto flex w-full max-w-[1500px] items-center gap-4 px-4 py-3 sm:px-6`}>
+        <Link href={contextHomeHref} className="shrink-0 border-r border-white/10 pr-4" aria-label={`${contextNames[context]} dashboard`}>
+          <strong className="font-evanescent st-brand block text-lg">
+            SERRIAN TIDE
+          </strong>
+          <span className="mt-0.5 block text-xs uppercase tracking-[0.14em] text-purple-200/85">
+            {contextNames[context]}
+          </span>
+        </Link>
+
+        <nav className="hidden min-w-0 flex-1 flex-wrap items-center gap-1 lg:flex" aria-label={`${contextNames[context]} navigation`}>
+          {links}
+        </nav>
+
+        <details ref={mobileMenuRef} className="relative ml-auto lg:hidden" onKeyDown={(event) => {
+          if (event.key === "Escape" && event.currentTarget.open) {
+            event.preventDefault();
+            event.currentTarget.open = false;
+            event.currentTarget.querySelector("summary")?.focus();
+          }
+        }}>
+          <summary className="cursor-pointer list-none rounded-full border border-white/15 bg-black/30 px-4 py-2 text-sm text-slate-200">
+            Navigate
+          </summary>
+          <nav className={`${styles.mobileMenu} st-surface-raised-bg absolute right-0 top-12 grid gap-1 rounded-lg border border-white/15 p-3 shadow-2xl`} aria-label={`${contextNames[context]} mobile navigation`}>
+            {links}
+            {alternateRoleDestinations.length > 0 ? (
+              <>
+                <span className="mt-2 border-t border-white/10 px-3 pt-3 text-xs uppercase tracking-[0.14em] text-purple-200/85">
+                  Switch Path
+                </span>
+                <Link href="/access" onClick={closeDisclosure} className="rounded-lg px-3 py-2 text-xs text-slate-300 hover:bg-white/5">All Paths</Link>
+                {alternateRoleDestinations.map((destination) => (
+                  <Link key={`mobile-${destination.href}`} href={destination.href} onClick={closeDisclosure} className="rounded-lg px-3 py-2 text-xs text-slate-300 hover:bg-white/5">
+                    {destination.label}
+                  </Link>
+                ))}
+              </>
+            ) : null}
+            <div className={`${styles.mobileAccount} border-t border-white/10 pt-2 md:hidden`}>
+              <span className="text-sm text-slate-300">{username}</span>
+              <button type="button" disabled={signingOut} onClick={() => void signOut()} className="st-button">
+                {signingOut ? "Signing out..." : "Log Out"}
+              </button>
+            </div>
+          </nav>
+        </details>
+
+        <div className="hidden shrink-0 items-center gap-2 border-l border-white/10 pl-4 md:flex">
+          {alternateRoleDestinations.length > 0 ? (
+            <details className="relative">
+              <summary className="cursor-pointer list-none rounded-full border border-purple-300/20 px-3 py-2 text-xs text-purple-100">
+                Switch Path
+              </summary>
+              <div className="st-surface-raised-bg absolute right-0 top-11 grid min-w-40 gap-1 rounded-xl border border-white/15 p-2 shadow-2xl">
+                <Link href="/access" onClick={closeDisclosure} className="rounded-lg px-3 py-2 text-xs text-slate-300 hover:bg-white/5">All Paths</Link>
+                {alternateRoleDestinations.map((destination) => (
+                  <Link key={destination.href} href={destination.href} onClick={closeDisclosure} className="rounded-lg px-3 py-2 text-xs text-slate-300 hover:bg-white/5">
+                    {destination.label}
+                  </Link>
+                ))}
+              </div>
+            </details>
+          ) : null}
+          <span className="max-w-28 truncate text-xs text-slate-300" title={username}>{username}</span>
+          <button
+            type="button"
+            disabled={signingOut}
+            onClick={() => void signOut()}
+            className="rounded-full border border-white/15 px-3 py-2 text-xs text-slate-400 transition hover:border-red-300/30 hover:text-red-200 disabled:opacity-50"
+          >
+            {signingOut ? "Signing out…" : "Log Out"}
+          </button>
+        </div>
+      </div>
+
+      {signOutError && <p role="alert" className="px-4 text-sm text-red-300">{signOutError}</p>}
+      <nav className={`${styles.breadcrumbs} mx-auto flex w-full max-w-[1500px] items-center gap-2 overflow-x-auto border-t border-white/5 px-4 py-2 text-xs sm:px-6`} aria-label="Breadcrumb">
+        {breadcrumbs.map((breadcrumb, index) => (
+          <span key={`${breadcrumb.href}-${index}`} className="flex shrink-0 items-center gap-2">
+            {index > 0 ? <span className="text-slate-700">→</span> : null}
+            {breadcrumb.current ? (
+              <span className="text-amber-200" aria-current="page">{breadcrumb.label}</span>
+            ) : (
+              <Link href={breadcrumb.href} className="text-slate-300 transition hover:text-slate-200">{breadcrumb.label}</Link>
+            )}
+          </span>
+        ))}
+      </nav>
+    </div>
+  );
+}

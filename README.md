@@ -1,6 +1,6 @@
 # Serrian Tide Web Rebuild
 
-First transfer from `D:/serrian-tide-website`: landing, registration, login, and Choose Your Path. The existing nebula/alchemy artwork, Evanescent title font, semantic theme, username/email login and role-based access cards are preserved. Destination pages are protected placeholders for the next stage.
+First transfer from `D:/serrian-tide-website`: landing, registration, login, and Choose Your Path. The existing nebula/alchemy artwork, Evanescent title font, semantic theme, username/email login and role-based access cards are preserved. The Admin workflow is available. Heavens, Realms and Crossroads remain protected placeholders for future work. No old database records are imported.
 
 ## Open the local preview
 
@@ -22,14 +22,20 @@ Create `strebuild_dev` in your chosen PostgreSQL server, with `serrian_tide_app`
 
 Edit **.env.local** with your connection, following **.env.example**. Use the host and port shown in your pgAdmin server connection; the example's `127.0.0.1:5432` assumes PostgreSQL on this machine and is only a default. Preserve the exact database-name capitalization. URL-encode password special characters in `DATABASE_URL`. Keep the existing generated `BETTER_AUTH_SECRET` for this local rebuild, and set `BETTER_AUTH_URL` to the address you actually open in the browser.
 
-Once the connection points to your new empty database, apply the five authentication tables:
+Once the connection points to your new empty database, apply the authentication and admin tables:
 
 ```powershell
 npm run db:migrate
 npm run dev
 ```
 
-Restart the app after changing its environment. Your new database starts with no accounts. Register through the UI for Player access; local test accounts are only in the separate test database. Admin/G.O.D. assignment management is a later transfer.
+Restart the app after changing its environment. Your new database starts with no accounts. Register through the UI for Player access; local test accounts are only in the separate test database. After creating your new account, initialize its Admin access once:
+
+```powershell
+npm run admin:bootstrap -- your_new_username
+```
+
+Refresh Choose Your Path, enter Admin, then use **Users & Roles** for later access changes. Bootstrap creates no account or password; it only grants Admin to the registered username you choose, and refuses to initialize another account once an administrator exists. Roles remain independent; grant G.O.D. or Player access through the UI as needed.
 
 ## Separate automated-test database
 
@@ -50,12 +56,15 @@ This starts the test cluster, applies test migrations and prepares three local t
 ```powershell
 npm run typecheck
 npm run lint
-npm run build
+npm run build:test
+npm run test:admin:unit
+npm run test:admin:services
 npm run test:browser
+npm run test:admin:browser
 ```
 
-The browser test starts its own production Next.js process on an available loopback port and explicitly uses `.env.test.local`. It requires Google Chrome at the standard Windows location, or `CHROME_PATH` pointing to a Chrome/Chromium executable. It creates uniquely named temporary accounts in the isolated test DB, then deletes only those accounts. It tests real registration/login/logout, role isolation, direct URL access, stale-session rejection and phone layouts. Screenshots and results are written to ignored `artifacts/auth/`.
+The browser test starts its own production Next.js process on an available loopback port and explicitly uses `.env.test.local`. It requires Google Chrome at the standard Windows location, or `CHROME_PATH` pointing to a Chrome/Chromium executable. It creates uniquely named temporary accounts in the isolated test DB, then deletes only those accounts. It tests real registration/login/logout, role isolation, direct URL access, stale-session rejection and phone layouts. Screenshots and results are written to ignored `artifacts/auth/` and `artifacts/admin/`. `build:test` builds with the isolated test connection without editing `.env.local`. Use `npm run build` when building against your application settings. Run database/browser suites sequentially; they restore shared test appearance settings during cleanup.
 
 ## Scope and next steps
 
-Read `REBUILD-HANDOFF.md`. No gameplay, combat, campaign, character, catalog, chat or admin-management implementation has been transferred. Admin/Heavens/Realms/Crossroads links intentionally end at authenticated placeholders. This repository has no remote configured yet.
+Read `REBUILD-HANDOFF.md` and `docs/admin-transfer.md`. Admin includes user accounts, role controls, safe account deletion, appearance and content summaries. Its System Overview card was a placeholder in the reference project and remains one. No gameplay, combat, campaign, character, catalog or chat implementation/data has been imported. Unavailable content summaries say so explicitly. Heavens/Realms/Crossroads remain protected placeholders. This repository has no remote configured yet.

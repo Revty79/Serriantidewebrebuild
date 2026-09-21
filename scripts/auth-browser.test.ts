@@ -58,7 +58,7 @@ try {
   const context = await browser.newContext({ viewport: { width: 1365, height: 900 } });
   const page = await context.newPage(); activePage = page; page.setDefaultTimeout(15_000);
   page.on("pageerror", (error) => errors.push(error.message));
-  for (const route of ["/access", "/admin", "/heavens", "/realms", "/chat"]) {
+  for (const route of ["/access", "/admin", "/admin/users", "/admin/users/missing", "/admin/content", "/admin/appearance", "/heavens", "/realms", "/chat"]) {
     await page.goto(`${base}${route}`); await page.waitForURL(`${base}/login`);
   }
   checks.push("Every protected destination redirects anonymous requests to login.");
@@ -126,7 +126,7 @@ try {
   await pool.query("insert into user_role (user_id,role) values ($1,'admin'),($1,'player')", [godId]);
   await godPage.goto(`${base}/access`); assert.deepEqual(await cards(godPage), ["ADMIN", "THE HEAVENS", "THE REALMS", "THE CROSSROADS"]);
   await screen(godPage, "admin-access-desktop", 1365); await screen(godPage, "admin-access-phone");
-  await godPage.goto(`${base}/admin`); await godPage.getByRole("heading", { name: "Administration", exact: true }).waitFor();
+  await godPage.goto(`${base}/admin`); await godPage.getByRole("heading", { name: "Admin Dashboard", exact: true }).waitFor();
   await pool.query("delete from user_role where user_id=$1 and role='god'", [godId]);
   await godPage.goto(`${base}/heavens`); await godPage.waitForURL(`${base}/access?denied=1`);
   checks.push("G.O.D., Player and Admin remain independent roles; added/revoked roles take effect on the next server request without signing out.");

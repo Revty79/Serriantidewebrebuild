@@ -17,7 +17,12 @@
     "test:browser": "node --env-file=.env.test.local --import tsx scripts/auth-browser.test.ts",
     "local:setup": "npm run db:setup && npm run db:test:migrate && npm run db:test:seed",
     "db:test:migrate": "drizzle-kit migrate --config=drizzle.test.config.ts",
-    "db:test:seed": "node --env-file=.env.test.local --conditions=react-server --import tsx scripts/seed-local-accounts.ts"
+    "db:test:seed": "node --env-file=.env.test.local --conditions=react-server --import tsx scripts/seed-local-accounts.ts",
+    "build:test": "node scripts/build-test.mjs",
+    "test:admin:unit": "node --import tsx --test src/features/appearance/appearance.test.ts src/features/authorization/admin-user-account.test.ts src/features/authorization/admin-content-overview.test.ts",
+    "test:admin:services": "node --env-file=.env.test.local --conditions=react-server --import tsx scripts/admin-services.test.ts",
+    "test:admin:browser": "node --env-file=.env.test.local --import tsx scripts/admin-browser.test.ts",
+    "admin:bootstrap": "node --env-file=.env.local --conditions=react-server --import tsx scripts/bootstrap-admin.ts"
   },
   "dependencies": {
     "next": "16.3.2",

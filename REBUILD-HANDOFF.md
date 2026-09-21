@@ -1,44 +1,32 @@
 # Rebuild handoff
 
-Reference: D:/serrian-tide-website at 7e996354106f9b098ca9433ad723b7c9dd37eb1e.
-New project: D:/Serriantidewebrebuild.
+Reference project: D:/serrian-tide-website at 7e996354106f9b098ca9433ad723b7c9dd37eb1e. Read-only reference; unchanged by this work.
+Rebuild: D:/Serriantidewebrebuild. Initial foundation checkpoint: 7863748254afd47504d8efe8ba441cd14f63be20.
 
-## Scope
+## Current scope and data direction
 
-First transfer only: landing, registration, login, Choose Your Path, authentication and roles. Admin, Heavens, Realms and Crossroads are protected placeholders. Gameplay and catalog systems have not been copied.
+Entry/registration/login/Choose Your Path plus the Admin workflow are implemented. Brannan clarified that this is largely a fresh rebuild retaining only selected functionality, with completely fresh database data. Do not import old accounts, password hashes, saved settings, histories, Campaigns, Characters or catalog rows. Select later feature work explicitly with him.
 
-Copied the existing entry-page presentation, semantic CSS, artwork, local title font, auth schema, role schema and username/email login. Added real sign-out, explicit post-registration login, server authorization for destination boundaries and a distinct rebuild cookie prefix. Appearance uses source CSS defaults; saved source-database theme settings were not imported.
+Heavens, Realms and Crossroads are protected placeholders. No gameplay/combat/catalog data or implementation has been brought over. Natural Armor's future direction remains a protection classification plus one numeric Soak value, without separate Armor and Soak reductions; this is recorded only for future work.
 
-## Validation completed
+## Admin transfer
 
-- Dependencies installed with pinned versions and a lockfile.
-- Fresh five-table authentication migration generated and applied to the isolated test database.
-- Three synthetic local test accounts seeded; repeating setup preserved account IDs, password hashes, test credentials and the user-edited application .env.local (verified by before/after comparison). Credentials are in ignored LOCAL-TEST-ACCOUNTS.md.
-- TypeScript, ESLint and production build passed.
-- Production Chromium browser checks passed all eight flow groups: anonymous redirects; entry links and invalid credentials; registration validation, hashed passwords and Player-only access; username login and role boundaries; logout, revoked cookies and email login; rejection of registration privilege escalation; independent roles with immediate grant/revoke enforcement; roleless access denial.
-- Phone screenshots check horizontal overflow. Desktop and phone landing/login/registration/access screenshots were inspected. Evidence is in ignored artifacts/auth/.
-- Confirmed test cleanup left only the three seed accounts and six intended role assignments.
-- Re-ran TypeScript, lint and production browser checks after separating app/test environments; all passed.
+See docs/admin-transfer.md for the exact scope, dependency protections, adjustments and validation. Accounts/roles, account details/deletion, appearance and summary screens work. Original System Overview remains a placeholder. Gameplay-dependent summaries show Not available yet. First-Admin bootstrap is available for a chosen newly registered account; it creates no user and refuses an additional bootstrap once Admin exists.
 
-## Confirmed database arrangement
+Public registration grants Player only. Roles are independent. Every page/action checks current access on the server; mutations reauthorize inside protected transactions. Auth cookies remain separate from the reference app. Appearance now reads persisted rebuild settings, with built-in defaults for an empty setting table.
 
-Brannan will create **strebuild_dev** (all lowercase), using **serrian_tide_app**, and handle the password locally. The assistant may retain its independent PostgreSQL test instance. The earlier database-review pause is resolved for work on the isolated test instance.
+## Database work ownership
 
-Application: `.env.local`; regular `db:migrate` explicitly applies migrations to this configured application database when requested.
+Brannan confirmed a second Codex session handles only database/migration work; this session handles Admin code and testing. The second session generated the appearance/lifecycle migration. Its artifacts were not edited by this session. Apply application migrations/connectivity changes with that session; this session has not modified .env.local, connected to strebuild_dev, or run first-Admin bootstrap there.
 
-Automated tests: `.env.test.local`; independent PostgreSQL 18 cluster at `.local/postgres`, bound to 127.0.0.1:55439. Database serrian_tide_rebuild_dev; role rebuild_local. The test migration, seed and browser commands are guarded for this exact test endpoint. `local:setup` preserves an existing application `.env.local`.
+Application database name: strebuild_dev (lowercase); login: serrian_tide_app; password managed locally by Brannan. Earlier .env.local used test-instance port 55439, but the other session now owns resolving the application connection. Do not assume current connectivity from this historical observation.
 
-The original project/database have not been changed. Neither schema nor test data has been applied to Brannan's strebuild_dev database by the assistant.
+Test instance remains independent: .local/postgres, 127.0.0.1:55439, serrian_tide_rebuild_dev/rebuild_local, .env.test.local. Seven application tables are migrated there. Three synthetic seed accounts are in ignored LOCAL-TEST-ACCOUNTS.md; temporary service/browser fixtures are cleaned up. No reference data was copied. local:setup preserves any existing application .env.local.
 
-## Application connection awaiting clarification
+## Validation and operation
 
-A rebuild Next.js dev server is already running at http://localhost:3010; the public login page returned HTTP 200. It was left running untouched. Brannan edited `.env.local` to use strebuild_dev, but it still points to port 55439. Asked which PostgreSQL port pgAdmin shows for his new database. Do not silently assume the port or overwrite his credentials. The app connection to strebuild_dev has NOT been validated. See README for connection and migration instructions.
+Admin tests passed: 10 unit tests, 8 service groups, 6 production browser groups. The 8 entry/authentication regression groups also passed. TypeScript, lint and production build passed. Screenshots were inspected on desktop/phone. Details and rerun commands are in README/docs/admin-transfer.md. Tests run sequentially and only against the guarded test endpoint.
 
-## Review and next transfers
+Use npm run dev on port 3010 for the app. This session left the already-running user dev server untouched. The test servers were stopped after validation. After an application schema is migrated, register a new user then run npm run admin:bootstrap -- your_new_username if no Admin exists yet.
 
-- Fresh local test accounts were chosen; original users/passwords were not imported.
-- Destination cards lead to protected placeholders until their systems are selected for transfer.
-- Existing Admin/G.O.D./Player roles remain independent; public registration grants Player only.
-- No password-recovery/email-delivery service or admin role-management UI was transferred.
-- Future Natural Armor design: natural armor identifies the protection and has one numeric Soak amount. No separate Armor and Soak reductions. This is recorded for a future transfer, not implemented in this authentication foundation.
-- This is a separate Git repository. No remote has been selected; never push the rebuild to the original project's remote automatically.
+No remote is configured for this repository. Never push this rebuild to the original project's remote automatically.

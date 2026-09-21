@@ -11,6 +11,6 @@ assert.equal(url.pathname, "/serrian_tide_rebuild_dev");
 assert.equal(url.username, "rebuild_local");
 
 export default defineConfig({
-  schema: ["./src/db/auth-schema.ts", "./src/db/authorization-schema.ts"],
+  schema: ["./src/db/auth-schema.ts", "./src/db/authorization-schema.ts", "./src/db/appearance-schema.ts", "./src/db/lifecycle-schema.ts"],
   out: "./drizzle", dialect: "postgresql", dbCredentials: { url: DATABASE_URL },
 });
